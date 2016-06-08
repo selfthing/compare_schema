@@ -1,26 +1,62 @@
 #! /usr/bin/python
 #coding:utf-8
+
 # load module
 import MySQLdb
 import sys,getopt
-#可以加个说明文档,说明可以不加端口,默认是3306,可以不加表名,默认对比数据库,如果加了表名的话,就只对比指定的表
-#权限:对源机的information_schema库的select,源库的select权限;
-#权限:对目的机information_schema库的select,mysql库的create,insert,update,delete,select,drop临时表的权限,目标库的select权限
-#因为默认拥有了information_schema的读权限,所以只需有源库的select权限,目的库的select权限,和在mysql建临时表的权限(有了create temporary tables on mysql.*就可以增删改查删)
-#临时表了
+
+# help info 
+def help_info():
+        print '\n'+'*'*155
+        print """
+This script is used for comparing two databases' schema,including table's column and index.
+
+Usage:
+compare database:
+compare_schema.py --src_host=xx --src_port=xx --src_user=xx --src_pwd=xx --src_db=xx --tgt_user=xx --tgt_host=xx --tgt-port=xx --tgt_pwd=xx --tgt_db=xx
+
+compare table only:
+compare_schema.py --src_host=xx --src_port=xx --src_user=xx --src_pwd=xx --src_db=xx --tgt_user=xx --tgt_host=xx --tgt-port=xx --tgt_pwd=xx --tgt_db=xx --src_table=xx --tgt_table=xx
+
+
+OPTIONS:
+   --src_host      IP address of source database's host
+   --src_user      User of source database,should least have select privilege of source database
+   --src_port      Port of source database,default 3306
+   --src_pwd       Password of src_user
+   --src_db        Name of source database
+   --tgt_host      IP address of target database's host
+   --tgt_port      Port of target database,default 3306
+   --tgt_user      User of target database,should least have select privilege of target database,and create temporary table
+                    privilege of mysql database
+   --tgt_pwd       Password of tgt_user
+   --tgt_db        Name of target database
+
+Prerequisites:
+   Need to install mysql module for python.
+"""
+        print '\n'+'*'*155
+
 # get parameters
-opts , args=getopt.getopt(sys.argv[1:],"s:t:",
-["src_user=","src_host=","src_pwd=","src_port=","src_db=","src_table=",
- "tgt_user=","tgt_host=","tgt_pwd=","tgt_port=","tgt_db=","tgt_table="]);
+if sys.argv[1]=="--help":
+	help_info()
+	sys.exit(1)
+try:
+	opts , args=getopt.getopt(sys.argv[1:],"s:t:",
+	["src_user=","src_host=","src_pwd=","src_port=","src_db=","src_table=",
+ 	"tgt_user=","tgt_host=","tgt_pwd=","tgt_port=","tgt_db=","tgt_table="]);
+except:
+	print "\n--error:bad parameter!\n"
+	sys.exit(1)
 conn_info={}
-#这里从2开始是要去掉key之前的两个减号'-'
+ # 2 means start from 2,cause there are two '-' before word
 for key,value in opts:
 	conn_info[key[2:]]=value
 if len(sys.argv)==1 :
-	print "pls add parameter,the format is like: --src_host=127.0.0.1 --src_user=dbuser --src_pwd=1 --src_db=test --src_table=a --tgt_user=dbuser --tgt_host=127.0.0.1 --tgt_pwd=1 --tgt_db=test --tgt_table=a"
+	print "please add parameter,the format is like: --src_host=127.0.0.1 --src_user=dbuser --src_pwd=1 --src_db=test --src_table=a --tgt_user=dbuser --tgt_host=127.0.0.1 --tgt_pwd=1 --tgt_db=test --tgt_table=a"
         sys.exit(1)
 if len(args)!=0 :
-	print "pls add correct parameter,the format is like:--src_host=127.0.0.1 --src_user=dbuser --src_pwd=1 --src_db=test --src_table=a --tgt_user=dbuser --tgt_host=127.0.0.1 --tgt_pwd=1 --tgt_db=test --tgt_table=a"
+	print "please add correct parameter,the format is like:--src_host=127.0.0.1 --src_user=dbuser --src_pwd=1 --src_db=test --src_table=a --tgt_user=dbuser --tgt_host=127.0.0.1 --tgt_pwd=1 --tgt_db=test --tgt_table=a"
 	sys.exit(1)
 # set default values
 conn_info.setdefault('src_port',3306);
@@ -28,7 +64,6 @@ conn_info.setdefault('tgt_port',3306);
 conn_info.setdefault('src_table','');
 conn_info.setdefault('tgt_table','');
 
-#print conn_info
 # connect test
 import MySQLdb
 # open db connections
@@ -38,15 +73,15 @@ try:
 	src_cursor.execute("SELECT VERSION()")
 	src_data = src_cursor.fetchone()
 except:
-	print "can't conn src_db"
+	print "---error:can't conn source database!"
 try:
         tgt_db = MySQLdb.connect(conn_info['tgt_host'],conn_info['tgt_user'],conn_info['tgt_pwd'],'',conn_info['tgt_port'])
         tgt_cursor = tgt_db.cursor()
         tgt_cursor.execute("SELECT VERSION()")
         tgt_data = tgt_cursor.fetchone()
 except:
-	print "can't conn tgt_db"
-
+	print "---error:can't conn target database!"
+# function to replace null value
 def ifnull(var, val):
   if var is None:
     return val
@@ -273,8 +308,8 @@ def compare_indexes(src_db,src_table,tgt_db,tgt_table):
         tgt_cursor.execute("drop table mysql.tmp_indexa");
         tgt_cursor.execute("drop table mysql.tmp_indexb");
 
+# start compare
 print "\n--start to compare:\n"
-# 如果没有填写表名的话,默认比较库,反之比较表
 if conn_info['src_table']=='' and conn_info['tgt_table']=='' :
 	compare_tables(conn_info['src_db'],conn_info['tgt_db'])
 if conn_info['src_table']!='' and conn_info['tgt_table']!='' :
