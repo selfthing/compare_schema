@@ -165,7 +165,6 @@ def compare_columns(src_db,src_table,tgt_db,tgt_table):
 	tgt_cursor.execute("create temporary table mysql.tmp_columnsb like information_schema.columns")
 	tgt_cursor.execute("insert into mysql.tmp_columnsb select * from information_schema.columns where table_schema='"+tgt_db+"' and table_name='"+tgt_table+"'");
 	# insert into target tmp table 
-	# 这里改成遍历数组的方式,而且需要判断是否为NULL,是NULL的话,左右不加单引号
 	for row in src_data:
 		sql="insert into mysql.tmp_columnsa values("
 		for i in range(len(row)):
