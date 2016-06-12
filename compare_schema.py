@@ -9,7 +9,7 @@ import sys,getopt
 def help_info():
         print '\n'+'*'*155
         print """
-This script is used for comparing two databases' schema,including table's column and index.
+This script is used for comparing two databases' or two tables' schema,including table's column and index.
 
 Usage:
 compare database:
