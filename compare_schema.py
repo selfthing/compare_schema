@@ -27,7 +27,7 @@ OPTIONS:
    --src_db        Name of source database
    --tgt_host      IP address of target database's host
    --tgt_port      Port of target database,default 3306
-   --tgt_user      User of target database,should least have select privilege of target database,and create temporary table
+   --tgt_user      User of target database,should least have select privilege and create temporary table privilege of target database
                     privilege of mysql database
    --tgt_pwd       Password of tgt_user
    --tgt_db        Name of target database
